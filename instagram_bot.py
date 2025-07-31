@@ -1,3 +1,7 @@
+from datetime import datetime
+import json
+
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 import keep_alive
 keep_alive.keep_alive()
 
@@ -44,6 +48,7 @@ API_KEY = "8c5543b2-d8de-44f8-85c8-47b981e86315"
 ADMIN_ID = 745211839  # Replace with your Telegram user ID
 
 USER_IDS_FILE = "user_ids.txt"
+USER_STATS_FILE = "user_stats.json"
 
 def load_user_ids():
     try:
@@ -60,6 +65,33 @@ def save_user_ids():
 # In-memory storage for user IDs (for simplicity)
 # For a production bot, consider using a database
 user_ids = load_user_ids()
+
+
+def update_user_stats(user: object):
+    user_id = user.id
+    try:
+        with open(USER_STATS_FILE, "r") as f:
+            stats = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        stats = {}
+
+    if str(user_id) not in stats:
+        stats[str(user_id)] = {
+            "joined": datetime.utcnow().strftime("%Y-%m-%d"),
+            "username": user.username,
+            "first_name": user.first_name
+        }
+
+        with open(USER_STATS_FILE, "w") as f:
+            json.dump(stats, f, indent=2)
+
+def add_user_id(user_id: int):
+    if user_id not in user_ids:
+        update_user_stats(update.effective_user)
+        user_ids.add(user_id)
+        with open(USER_IDS_FILE, "a") as f:
+            f.write(f"{user_id}\n")
+
 
 # Instagram URL pattern
 INSTAGRAM_URL_PATTERN = re.compile(
@@ -86,6 +118,7 @@ Any Issue Contact Admin @AnkitRathore
 Just send me a link to get started! 🚀
     """
     
+    add_user_id(update.effective_user.id)
     await update.message.reply_text(
         welcome_message,
         parse_mode=ParseMode.MARKDOWN
@@ -262,6 +295,42 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
             parse_mode=ParseMode.MARKDOWN
         )
 
+
+async def admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Admin panel interface."""
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("❌ You are not authorized to access the admin panel.")
+        return
+
+    total_users = len(user_ids)
+    message = f"🛠️ *Admin Panel*\n\n👥 Total Users: *{total_users}*"
+
+    keyboard = [
+        [InlineKeyboardButton("📢 Send Broadcast", callback_data="send_broadcast")],
+        [InlineKeyboardButton("📄 Download User List", callback_data="download_users")],
+        [InlineKeyboardButton("👥 Show All Users", callback_data="show_users")],
+        [InlineKeyboardButton("📈 User Stats", callback_data="user_stats")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+    """Admin panel interface."""
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("❌ You are not authorized to access the admin panel.")
+        return
+
+    total_users = len(user_ids)
+    message = f"🛠️ *Admin Panel*\n\n👥 Total Users: *{total_users}*"
+
+    keyboard = [
+        [InlineKeyboardButton("📢 Send Broadcast", callback_data="send_broadcast")],
+        [InlineKeyboardButton("📄 Download User List", callback_data="download_users")]
+    ]
+
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    await update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN, reply_markup=reply_markup)
+
+
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
     Broadcast a message to all users. Only accessible by the admin.
@@ -310,6 +379,10 @@ def main() -> None:
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("broadcast", broadcast))
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+application.add_handler(CommandHandler("broadcast", broadcast))
+application.add_handler(CommandHandler("admin", admin_panel))
+application.add_handler(CallbackQueryHandler(handle_admin_buttons))
+application.add_handler(CommandHandler("help", help_command))
     
     # Register error handler
     application.add_error_handler(error_handler)
@@ -337,3 +410,97 @@ if __name__ == '__main__':
     main()
 
 
+
+
+
+async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Broadcast a message to all users (admin only)."""
+    if update.effective_user.id != ADMIN_ID:
+        await update.message.reply_text("❌ You are not authorized to use this command.")
+        return
+
+    if not context.args:
+        await update.message.reply_text("⚠️ Please provide a message to broadcast.\nUsage: /broadcast Your message here")
+        return
+
+    message = "📢 *Broadcast Message:*\n" + " ".join(context.args)
+    sent_count = 0
+
+    for uid in user_ids:
+        try:
+            await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.MARKDOWN)
+            sent_count += 1
+        except Exception as e:
+            logger.warning(f"Failed to send message to {uid}: {e}")
+
+    await update.message.reply_text(f"✅ Broadcast sent to {sent_count} users.")
+
+
+async def handle_admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle button presses from admin panel."""
+    query = update.callback_query
+    await query.answer()
+
+    if update.effective_user.id != ADMIN_ID:
+        await query.edit_message_text("❌ Unauthorized access.")
+        return
+
+    if query.data == "show_users":
+        try:
+            with open(USER_STATS_FILE, "r") as f:
+                stats = json.load(f)
+        except Exception:
+            stats = {}
+
+        if not stats:
+            await query.edit_message_text("🚫 No active users found.")
+            return
+
+        user_lines = []
+        for uid, data in stats.items():
+            name = data.get("username")
+            if name:
+                label = f"@{name}"
+            else:
+                label = data.get("first_name", "Unknown")
+            user_lines.append(f"👤 {label} ({uid})")
+
+        user_text = "\n".join(user_lines)
+        message = f"👥 *Active Users ({len(stats)}):*\n\n{user_text}"
+        await query.edit_message_text(message, parse_mode=ParseMode.MARKDOWN)
+
+    elif query.data == "user_stats":
+        try:
+            with open(USER_STATS_FILE, "r") as f:
+                stats = json.load(f)
+        except Exception:
+            stats = {}
+
+        total = len(stats)
+        today = datetime.utcnow().strftime("%Y-%m-%d")
+        new_today = sum(1 for u in stats.values() if u.get("joined") == today)
+        first_join = min((u.get("joined") for u in stats.values() if "joined" in u), default="N/A")
+
+        msg = f"📈 *User Stats*\n\n👥 Total: *{total}*\n🆕 Joined Today: *{new_today}*\n📅 First User: *{first_join}*"
+        await query.edit_message_text(msg, parse_mode=ParseMode.MARKDOWN)
+
+
+    elif query.data == "download_users":
+        await query.edit_message_text("📄 Downloading users is not yet implemented.")
+    elif query.data == "send_broadcast":
+        await query.edit_message_text("📢 Please use /broadcast <message> to send a message.")
+
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a list of available commands."""
+    help_text = """📖 *Bot Commands*
+
+👤 *User Commands*
+/start - Welcome and instructions
+/help - Show this help message
+🔗 Send any public Instagram video/reel/post URL to download
+
+👑 *Admin Commands*
+/broadcast <message> - Send a message to all users
+/admin - Open the admin panel
+    """
+    await update.message.reply_text(help_text, parse_mode=ParseMode.MARKDOWN)
