@@ -51,7 +51,9 @@ USER_IDS_FILE = "user_ids.txt"
 USER_STATS_FILE = "user_stats.json"
 
 def load_user_ids():
-    try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
         with open(USER_IDS_FILE, "r") as f:
             return set(int(line.strip()) for line in f)
     except FileNotFoundError:
@@ -69,7 +71,9 @@ user_ids = load_user_ids()
 
 def update_user_stats(user: object):
     user_id = user.id
-    try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
         with open(USER_STATS_FILE, "r") as f:
             stats = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
@@ -144,7 +148,9 @@ async def download_instagram_video(url: str) -> dict:
         "type": "instagram"
     }
     
-    try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
         async with httpx.AsyncClient() as client:
             response = await client.post(
                 API_ENDPOINT,
@@ -184,7 +190,9 @@ download_queue = asyncio.Queue()
 async def download_worker():
     while True:
         update, context, processing_message, message_text = await download_queue.get()
-        try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
             api_response = await download_instagram_video(message_text)
             if "error" in api_response:
                 await processing_message.edit_text(
@@ -348,7 +356,9 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     fail_count = 0
 
     for user_id in list(user_ids):  # Iterate over a copy to avoid issues if set changes
-        try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
             await context.bot.send_message(chat_id=user_id, text=message_to_broadcast)
             success_count += 1
         except Exception as e:
@@ -392,7 +402,6 @@ if __name__ == "__main__":
     logger.info("Starting Instagram Video Downloader Bot...")
     print("🤖 Instagram Video Downloader Bot is starting...")
     print("Press Ctrl+C to stop the bot")
-    application.run_polling(post_init=post_init)
 
     async def post_init(application: Application) -> None:
         asyncio.create_task(download_worker())
@@ -400,8 +409,11 @@ if __name__ == "__main__":
     application.post_init = post_init
     
     # Run the bot until the user presses Ctrl-C
-    try:
-    except KeyboardInterrupt:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
+except KeyboardInterrupt:
+    logger.info("Bot stopped by user.")
         save_user_ids()
 
 
@@ -426,7 +438,9 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     sent_count = 0
 
     for uid in user_ids:
-        try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
             await context.bot.send_message(chat_id=uid, text=message, parse_mode=ParseMode.MARKDOWN)
             sent_count += 1
         except Exception as e:
@@ -445,7 +459,9 @@ async def handle_admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYP
         return
 
     if query.data == "show_users":
-        try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
             with open(USER_STATS_FILE, "r") as f:
                 stats = json.load(f)
         except Exception:
@@ -469,7 +485,9 @@ async def handle_admin_buttons(update: Update, context: ContextTypes.DEFAULT_TYP
         await query.edit_message_text(message, parse_mode=ParseMode.MARKDOWN)
 
     elif query.data == "user_stats":
-        try:
+try:
+    logger.info("Bot is running. Press Ctrl+C to stop.")
+    application.run_polling(post_init=post_init)
             with open(USER_STATS_FILE, "r") as f:
                 stats = json.load(f)
         except Exception:
