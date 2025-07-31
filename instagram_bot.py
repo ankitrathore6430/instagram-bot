@@ -8,7 +8,7 @@ from telegram import Update, Bot
 from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
 
 # Environment Variables
-BOT_TOKEN = "8042117650:AAEZrMNPkf10zm1dWJWeZdGYb6i51kgkYfI"
+BOT_TOKEN = "1233674761:AAHHDCDj707Ek6CjsTJNHlzty7ag09pLY8c"
 ADMIN_ID = 745211839
 
 # File paths
