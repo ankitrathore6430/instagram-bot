@@ -123,3 +123,34 @@ if __name__ == "__main__":
         telegram_bot_main()
     except KeyboardInterrupt:
         print("Bot stopped manually.")
+dispatcher.add_handler(CommandHandler("download", download_instagram_video))
+
+import re
+import requests
+
+def download_instagram_video(update: Update, context: CallbackContext):
+    if not context.args:
+        update.message.reply_text("Please provide an Instagram video link.")
+        return
+
+    url = context.args[0]
+    if "instagram.com" not in url:
+        update.message.reply_text("Invalid link. Please send a valid Instagram URL.")
+        return
+
+    update.message.reply_text("Downloading...")
+
+    try:
+        headers = {'User-Agent': 'Mozilla/5.0'}
+        response = requests.get(url, headers=headers)
+        html = response.text
+        video_url_match = re.search(r'"video_url":"([^"]+)"', html)
+
+        if video_url_match:
+            video_url = video_url_match.group(1).replace('\\u0026', '&')
+            video_data = requests.get(video_url, stream=True).content
+            update.message.reply_video(video=video_data, caption="Here's your video 🎬")
+        else:
+            update.message.reply_text("Could not find video. The link might be private or unsupported.")
+    except Exception as e:
+        update.message.reply_text(f"Error: {e}")
