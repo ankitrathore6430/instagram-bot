@@ -5,7 +5,7 @@ import time
 import httpx
 from flask import Flask, request
 from telegram import Update, Bot
-from telegram.ext import CommandHandler, MessageHandler, Filters, ApplicationBuilder, ContextTypes
+from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
 
 # Environment Variables
 BOT_TOKEN = os.getenv("BOT_TOKEN")
@@ -108,7 +108,7 @@ def telegram_bot_main():
     application.add_handler(CommandHandler("broadcast", broadcast))
     application.add_handler(CommandHandler("users", list_users))
     application.add_handler(CommandHandler("all_users", list_all_users))
-    application.add_handler(MessageHandler(Filters.command, unknown))
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
 
     application.run_polling()
 
