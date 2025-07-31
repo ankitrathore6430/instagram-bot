@@ -388,9 +388,11 @@ application.add_handler(CommandHandler("help", help_command))
 application.add_error_handler(error_handler)
     
     # Start the bot
+if __name__ == "__main__":
     logger.info("Starting Instagram Video Downloader Bot...")
     print("🤖 Instagram Video Downloader Bot is starting...")
     print("Press Ctrl+C to stop the bot")
+    application.run_polling(post_init=post_init)
 
     async def post_init(application: Application) -> None:
         asyncio.create_task(download_worker())
@@ -399,11 +401,8 @@ application.add_error_handler(error_handler)
     
     # Run the bot until the user presses Ctrl-C
     try:
-        application.run_polling(allowed_updates=Update.ALL_TYPES, drop_pending_updates=True)
     except KeyboardInterrupt:
-        logger.info("Bot stopped by user. Saving user IDs...")
         save_user_ids()
-        logger.info("User IDs saved. Exiting.")
 
 
 if __name__ == '__main__':
