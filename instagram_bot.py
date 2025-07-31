@@ -8,8 +8,8 @@ from telegram import Update, Bot
 from telegram.ext import CommandHandler, MessageHandler, ApplicationBuilder, ContextTypes, filters
 
 # Environment Variables
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-ADMIN_ID = int(os.getenv("ADMIN_ID", "0"))
+BOT_TOKEN = "8042117650:AAEZrMNPkf10zm1dWJWeZdGYb6i51kgkYfI"
+ADMIN_ID = 745211839
 
 # File paths
 USER_FILE = "users.json"
