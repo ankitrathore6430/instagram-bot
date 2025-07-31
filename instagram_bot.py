@@ -385,7 +385,7 @@ application.add_handler(CallbackQueryHandler(handle_admin_buttons))
 application.add_handler(CommandHandler("help", help_command))
     
     # Register error handler
-    application.add_error_handler(error_handler)
+application.add_error_handler(error_handler)
     
     # Start the bot
     logger.info("Starting Instagram Video Downloader Bot...")
