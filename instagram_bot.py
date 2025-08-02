@@ -47,7 +47,8 @@ download_count = 0
 def load_user_ids():
     try:
         with open(USER_IDS_FILE, "r") as f:
-            return set(int(line.strip()) for line in f)
+            # Filter out empty lines before converting to an integer
+            return set(int(line.strip()) for line in f if line.strip())
     except FileNotFoundError:
         return set()
 
