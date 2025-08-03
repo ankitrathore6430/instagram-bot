@@ -34,7 +34,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Bot configuration
-BOT_TOKEN = "1233674761:AAHFR0zCqp7a7v4YGiEUmpyWdxW0_9IY2ic"
+BOT_TOKEN = "8042117650:AAFlx2qNx868SKTZj0hRX_eDQ5NzqdCot_o"
 API_ENDPOINT = "https://apihut.in/api/download/videos"
 API_KEY = "8c5543b2-d8de-44f8-85c8-47b981e86315"
 
